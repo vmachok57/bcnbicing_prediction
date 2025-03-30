@@ -13,7 +13,7 @@
 10. Autores**
 
 **Introducción**
-Este proyecto forma parte del trabajo final del posgrado en Data Science y tiene como objetivo abordar un problema real relacionado con el uso del sistema de bicicletas compartidas en una ciudad (Barcelona).
+Este proyecto forma parte del trabajo final del posgrado en Data Science e IA y tiene como objetivo abordar un problema real relacionado con el uso del sistema de bicicletas compartidas en Barcelona.
 El foco principal es predecir la disponibilidad de espacios libres para aparcar una bicicleta en una estación determinada, en un momento concreto. Para ello, se parte de un conjunto de datos reales que recogen la disponibilidad en tiempo real, y se desarrollan diferentes estrategias de análisis, transformación de datos y modelado predictivo.
 
 **Objetivo del Proyecto**
@@ -36,7 +36,7 @@ Se utilizaron dos datasets principales:
 Dataset masivo con un histórico de más de 4 años y medio (datos cada 5 minutos):
 - Número de bicicletas disponibles
 - Número de anclajes libres
-- Fecha y hora del reporte (ReportedDayTime)
+- Fecha y hora del reporte (ReportedDT)
 - ID de la estación correspondiente
 
 
@@ -44,13 +44,15 @@ Dataset masivo con un histórico de más de 4 años y medio (datos cada 5 minuto
 Dado el tamaño y la granularidad del dataset (más de 4 años con registros cada 5 minutos por estación), el preprocesamiento fue un paso clave.
 
 1. Agregación temporal
-   Para reducir el tamaño del dataset y hacerlo más manejable, se agregaron los registros a nivel de hora, calculando la media horaria de disponibilidad. Esto facilitó los cálculos posteriores y redujo la complejidad del modelo.
+   Para reducir el tamaño del dataset y hacerlo más manejable, se agregaron los registros a nivel de hora, calculando la mediana horaria de disponibilidad. Esto facilitó los cálculos posteriores y redujo
+   la complejidad del modelo.
 2. Unión con InfoStations
-   Se hizo un join entre el dataset de disponibilidad y el de estaciones para incorporar datos como la capacidad máxima de cada estación. Esta información fue clave para validar si los datos de disponibilidad eran coherentes.
+   Se hizo un join entre el dataset de disponibilidad y el de estaciones para incorporar datos como la capacidad máxima de cada estación. Esta información fue clave para validar si los datos de
+   disponibilidad eran coherentes.
 3. Validación y corrección de capacidad
    En algunos casos, se detectaron incoherencias: la suma de bicicletas disponibles y espacios libres superaba la capacidad máxima registrada en InfoStations. Para corregirlo:
    Se priorizó el valor de num_bikes_available como más fiable.
-   Se calculó num_docks_available_mod = capacidad - num_bikes_available, asegurando así que no se superara el máximo.
+   Se calculó num_docks_available_mod = capacidad - num_bikes_available, asegurando así que no se superara el máximo (capacidad).
 4. Estimación de capacidad (cuando faltaba)
    Algunas estaciones no tenían capacidad registrada. En esos casos, se estimó como: capacidad = bikes_available + docks_available.
    Esta aproximación se consideró aceptable dadas las limitaciones del dataset.
@@ -64,11 +66,12 @@ Dado el tamaño y la granularidad del dataset (más de 4 años con registros cad
    Se incluyen variables con la disponibilidad en las 4 horas anteriores (t-1, t-2, t-3, t-4).
    Esto genera un dataset supervisado, donde cada fila contiene información histórica para predecir el valor actual.
 7. Control de calidad y valores nulos
-   Se eliminaron todas las filas sin ReportedDayTime, ya que no se podía ubicar temporalmente.
+   Se eliminaron todas las filas sin ReportedDT, ya que no se podía ubicar temporalmente.
    El resto de valores nulos, que eran pocos, se imputaron con la moda de cada columna correspondiente.
 8. Eliminación de duplicados y filas redundantes
    Para evitar solapamientos, se seleccionó solo la quinta fila de cada grupo temporal por estación.
    Esto asegura que cada fila tiene datos completos de las 4 horas anteriores y evita repetir la misma información en filas sucesivas.
+9. Detectamos que una estación queda lejos del resto de las estaciones y decidimos capar el valor de la variable nueva "nearest_station_distance" a 99no percentil.
    
 **Análisis Exploratorio**
 Durante el análisis exploratorio se identificaron varios patrones relevantes en el uso del sistema de bicicletas:
@@ -78,22 +81,24 @@ Durante el análisis exploratorio se identificaron varios patrones relevantes en
    Por la mañana temprano (entrada al trabajo)
    Por la tarde (salida del trabajo), donde se alcanza el máximo de uso diario.
    En fines de semana el patrón es más relajado, sin picos tan marcados.
-2. Festivos
+![image](https://github.com/user-attachments/assets/d32d52c6-e461-4b7a-b71f-efa6ffadf2a3)
+
+3. Festivos
    El patrón de uso en días festivos es similar al de los fines de semana: uso más bajo y horarios menos definidos.
    Se confirma que los días no festivos tienen mayor intensidad de uso.
-3. Eventos especiales
+4. Eventos especiales
    Se buscó una posible relación entre eventos de la ciudad (festivales, partidos, etc.) y la disponibilidad, pero no se identificó un patrón claro o significativo.
-4. Temporalidad anual
+5. Temporalidad anual
    Se detecta un uso más bajo en invierno y un pico de uso en verano.
    Excepción: agosto, donde el uso baja bruscamente, probablemente por vacaciones y menor actividad laboral.
-5. Altitud
+6. Altitud
    Se observó una correlación positiva entre altitud y espacios disponibles.
    Interpretación: los usuarios toman bicicletas en zonas altas (montaña) y las dejan en zonas bajas (mar). No hacen el trayecto inverso con la misma frecuencia.
-6. Proximidad a estaciones de metro
+7. Proximidad a estaciones de metro
    No se encontró correlación significativa entre la distancia al metro y la disponibilidad de anclajes.
-7. Densidad de estaciones cercanas
+8. Densidad de estaciones cercanas
    No se encontró relación clara con la distancia a la estación más cercana.
-   Sin embargo, sí se observó que a mayor número de estaciones dentro de un radio de 300–500 metros, menor es la disponibilidad, probablemente por competencia por espacio.
+   Sin embargo, sí se observó que a mayor número de estaciones dentro de un radio de 300 metros, menor es la disponibilidad, probablemente por competencia por espacio.
 
 ***Modelado***
 **Modelo 1: Regresión Lineal (baseline)**
