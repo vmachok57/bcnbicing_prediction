@@ -10,7 +10,7 @@
 7. Evaluación del Modelo
 8. Limitaciones y Mejoras Futuras
 9. Conclusiones
-10. Autores**
+10. Autores
 
 **Introducción**
 Este proyecto forma parte del trabajo final del posgrado en Data Science e IA y tiene como objetivo abordar un problema real relacionado con el uso del sistema de bicicletas compartidas en Barcelona.
