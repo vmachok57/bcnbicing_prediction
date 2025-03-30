@@ -33,7 +33,7 @@ Se utilizaron dos datasets principales:
 
 
 **Histórico de disponibilidad**
-Dataset masivo con un histórico de más de 4 años y medio (datos cada 5 minutos):
+Dataset masivo con un histórico de más de 4 años y medio (datos cada 5 minutos), hemos cogido 2022-2024 para evitar que el periodo de COVID impacte el modelo:
 - Número de bicicletas disponibles,
 - Número de anclajes libres,
 - Fecha y hora del reporte (ReportedDT),
@@ -121,7 +121,8 @@ Red = Less Docks Available
 Se entrenó una regresión lineal simple utilizando solo las variables históricas (t-1 a t-4) para establecer un modelo de referencia.
 Split: 80% train / 20% test
 Resultados:
-![image](https://github.com/user-attachments/assets/277e8813-45a6-4b07-ac20-400fcccf3ec0)
+![image](https://github.com/user-attachments/assets/db3f7a51-3ca1-465d-ba4f-eb6341ee43fb)
+
 
 **Enriquecimiento del modelo**
 Se añadieron múltiples variables nuevas:
@@ -138,48 +139,49 @@ Hacer un OLS (Ordinary Least Squares), o regresión lineal ordinaria, al princip
 Al realizar OLS, obtenemos pruebas estadísticas (como el valor p) para evaluar si las variables son significativas para predecir el resultado. Esto nos permite identificar cuáles variables aportan valor al modelo.
 Si algunas variables no son significativas (por ejemplo, valor p > 0.05), podríamos considerar eliminar esas variables o realizar transformaciones.
 
-![image](https://github.com/user-attachments/assets/18e40d39-e2dd-43fa-b3a6-2d871d9dcd4d)
+![image](https://github.com/user-attachments/assets/1d4f88ff-5d89-49ef-bc9e-60a2c9409bda)
+
+
 
 1. Estadísticas generales del modelo:
-R-squared (0.787): Indica que aproximadamente el 78.7% de la variabilidad en el porcentaje de muelles disponibles puede ser explicado por las variables independientes del modelo.
-Adj. R-squared (0.787): Similar al R-squared, pero ajustado por el número de predictores. Un valor cercano al R-squared indica que la inclusión de más variables no ha causado una sobreajuste del modelo.
-F-statistic (2.050e+05) y Prob (F-statistic) (0.00): La prueba F evalúa si al menos una de las variables independientes tiene una relación significativa con la variable dependiente.
+R-squared (0.796): Indica que aproximadamente el 79.6% de la variabilidad en el porcentaje de muelles disponibles puede ser explicado por las variables independientes del modelo.
+Adj. R-squared (0.796): Similar al R-squared, pero ajustado por el número de predictores. Un valor cercano al R-squared indica que la inclusión de más variables no ha causado una sobreajuste del modelo.
+F-statistic (5.056e+05) y Prob (F-statistic) (0.00): La prueba F evalúa si al menos una de las variables independientes tiene una relación significativa con la variable dependiente.
 Un valor p (Prob) de 0.00 indica que el modelo es altamente significativo.
-Log-Likelihood (5.9586e+05): Mide la bondad de ajuste del modelo, con valores más altos indicando un mejor ajuste.
-AIC (-1.192e+06) y BIC (-1.192e+06): Son criterios para la selección de modelos. Valores más bajos indican un buen ajuste.
+Log-Likelihood (1.4140e+06): Mide la bondad de ajuste del modelo, con valores más altos indicando un mejor ajuste.
+AIC (-2.828e+06) y BIC (-2.828e+06): Son criterios para la selección de modelos. Valores más bajos indican un buen ajuste.
 
 
 2. Coeficientes de las variables independientes:
 Cada coeficiente representa la relación de esa variable independiente con la variable dependiente (percentage_docks_available). Los coeficientes significativos son aquellos con un valor p (P>|t|) menor a 0.05. A continuación, se describen algunos de los resultados más relevantes:
-- month (0.0005): Cada aumento en el mes incrementa el porcentaje de muelles disponibles en 0.0005 unidades. Este coeficiente es muy pequeño pero significativo (valor p < 0.001).
-- day (-1.101e-06): El día tiene un efecto negativo muy pequeño, pero no es significativo (P>|t| = 0.941), lo que sugiere que no hay una relación clara entre el día y la disponibilidad de muelles.
-- hour (-1.582e-05): La hora del día tiene una relación negativa con la disponibilidad de muelles. Cada aumento en la hora disminuye ligeramente el porcentaje de muelles disponibles.
+- month (0.0009): Cada aumento en el mes incrementa el porcentaje de muelles disponibles en 0.0009 unidades. Este coeficiente es muy pequeño pero significativo (valor p < 0.001).
+- day (1.463e-06 ): El día tiene un efecto positivo muy pequeño, pero no es significativo (P>|t| = 0.881), lo que sugiere que no hay una relación clara entre el día y la disponibilidad de muelles.
+- hour (-4.054e-05): La hora del día tiene una relación negativa con la disponibilidad de muelles. Cada aumento en la hora disminuye ligeramente el porcentaje de muelles disponibles.
 - capacity (0.0002): La capacidad tiene un efecto positivo, lo que sugiere que a mayor capacidad, hay más muelles disponibles.
-- altitude (0.0003): El altitud tiene un coeficiente positivo y es altamente significativo, lo que implica que el aumento de la altitud está asociado con un aumento en la disponibilidad de muelles.
-- special_event (7.204e-05): Los eventos especiales no parecen tener un impacto significativo en la disponibilidad de muelles (valor p > 0.05).
-- is_weekend (-0.0014): Los fines de semana están asociados con una pequeña disminución en la disponibilidad de muelles.
-- is_holiday (-0.0017): Similar al fin de semana, los días festivos también tienen una relación negativa con la disponibilidad de muelles.
-- disponibilidad_porcentage_1h_antes (0.9637): La disponibilidad de muelles una hora antes tiene un impacto muy fuerte en la disponibilidad actual, con un coeficiente cercano a 1, lo que indica una relación muy fuerte y positiva.
-- disponibilidad_porcentage_2h_antes (-0.0984): A mayor disponibilidad de muelles dos horas antes, menor es la disponibilidad de muelles en el momento actual, lo que sugiere un patrón cíclico.
-- nearest_station_distance (-1.792e-05): A medida que aumenta la distancia hasta la estación más cercana, disminuye ligeramente la disponibilidad de muelles.
+- altitude (0.0004): El altitud tiene un coeficiente positivo y es altamente significativo, lo que implica que el aumento de la altitud está asociado con un aumento en la disponibilidad de muelles.
+- special_event (-0.0011): Los eventos especiales no parecen tener un impacto significativo en la disponibilidad de muelles.
+- is_weekend (-0.0008): Los fines de semana están asociados con una pequeña disminución en la disponibilidad de muelles.
+- is_holiday (-0.0031): Similar al fin de semana, los días festivos también tienen una relación negativa con la disponibilidad de muelles.
+- disponibilidad_porcentage_1h_antes (0.9658): La disponibilidad de muelles una hora antes tiene un impacto muy fuerte en la disponibilidad actual, con un coeficiente cercano a 1, lo que indica una relación muy fuerte y positiva.
+- disponibilidad_porcentage_2h_antes (-0.0988): A mayor disponibilidad de muelles dos horas antes, menor es la disponibilidad de muelles en el momento actual, lo que sugiere un patrón cíclico.
+- nearest_station_distance (-1.878e-05): A medida que aumenta la distancia hasta la estación más cercana, disminuye ligeramente la disponibilidad de muelles.
 - stations_within_100m (-0.0011): La proximidad a otras estaciones dentro de los 100 metros tiene un efecto negativo en la disponibilidad de muelles, pero este efecto no es significativo.
-- stations_within_300m (-0.0012): A más estaciones cercanas a 300 metros también muestran una relación negativa significativa con la disponibilidad de muelles.
+- stations_within_300m (-0.0014): A más estaciones cercanas a 300 metros también muestran una relación negativa significativa con la disponibilidad de muelles.
 Como también sugiere la grafica  del análisis exploratorio, la variable 300 metros parece tener una relación lineal negativa con la disponibilidad de muelles.
 ![image](https://github.com/user-attachments/assets/ec0b0102-f6f8-44de-9c25-18c8cd5da0da)
-- stations_within_500m (0.0006): Sin embargo, las estaciones dentro de los 500 metros están positivamente relacionadas con la disponibilidad de muelles. Es posible debido al efecto de autocorrelación entre estas variables, para contrarrestar el efecto de la variable anterior. Por eso se toma la decisión de utilizar solo la variable stations_within_300m en el modelo final.
+- stations_within_500m (0.0009): Sin embargo, las estaciones dentro de los 500 metros están positivamente relacionadas con la disponibilidad de muelles. Es posible debido al efecto de autocorrelación entre estas variables, para contrarrestar el efecto de la variable anterior. Por eso se toma la decisión de utilizar solo la variable stations_within_300m en el modelo final.
 
 Se procede al análisis de factores de inflación de la varianza (FIV) para evaluar la multicolinealidad entre las variables independientes en el modelo. Observamos dos o más variables independientes que están altamente correlacionadas, lo que puede hacer que el modelo sea menos confiable.
-![image](https://github.com/user-attachments/assets/92c42d09-0162-4da4-9741-1b584f2a339c)
+![image](https://github.com/user-attachments/assets/cb8acf07-379a-4263-b99d-b7509215b537)
 Tambien  observamos en las matrices de correlación fuerte correlación entre estas variables:
-![image](https://github.com/user-attachments/assets/8ec83c84-631a-4455-b674-5de52e4dbcbd)
-
+![image](https://github.com/user-attachments/assets/d29ceb5a-efcf-48b9-a0e0-9b708bff73ad)
 
 
 3. Pruebas adicionales:
-- Omnibus (137032.274): Es una prueba de normalidad de los residuos. Un valor p de 0.00 indica que los residuos no siguen una distribución normal.
-- Durbin-Watson (1.989): Este estadístico evalúa la autocorrelación de los residuos. Un valor cercano a 2 indica que no hay autocorrelación significativa.
+- Omnibus (310756.820): Es una prueba de normalidad de los residuos. Un valor p de 0.00 indica que los residuos no siguen una distribución normal.
+- Durbin-Watson (1.988): Este estadístico evalúa la autocorrelación de los residuos. Un valor cercano a 2 indica que no hay autocorrelación significativa.
 - Jarque-Bera (JB) y Prob (JB) (0.00): Indican que los residuos no siguen una distribución normal (esto se confirma con el valor p muy bajo).
-- Skew (-0.194) y Kurtosis (10.736): La asimetría es baja, pero la curtosis indica que los residuos tienen colas más gruesas que una distribución normal. Esto indica que los residuos pueden tener más valores extremos (outliers) que una distribución normal, lo que podría implicar que el modelo no está capturando algunas variaciones importantes de los datos.
+- Skew (-0.145) y Kurtosis (10.540): La asimetría es baja, pero la curtosis indica que los residuos tienen colas más gruesas que una distribución normal. Esto indica que los residuos pueden tener más valores extremos (outliers) que una distribución normal, lo que podría implicar que el modelo no está capturando algunas variaciones importantes de los datos.
 
 En resumen, el modelo OLS muestra que varias variables, como la capacidad, la altitud, y la disponibilidad  1 hora pasada de muelles tienen una relación significativa con el porcentaje de muelles disponibles, mientras que algunas otras variables como los eventos especiales y el día de la semana no tienen un impacto significativo.
 
@@ -187,7 +189,7 @@ Otra alternativa que hemos utilizado para mitigar las correlaciones entre variab
 
 **Explained_variance_ratio_** nos da el porcentaje de varianza explicada por cada componente principal. Si sumas los valores de explained_variance_ratio_, obtenemos la cantidad total de varianza explicada por todas las componentes principales.
 Ahora obtenemos las componentes principales (que no están correlacionadas) los usamos en el modelo de XGBoost.
-**Nos ha salido el R2 muy parecido que en el modelo de regression 0,78**
+**Nos ha salido el R2 muy parecido que en el modelo de regression, mejorandolo a 0,81**
 ![image](https://github.com/user-attachments/assets/d6f9c9b0-5828-412d-babe-8d7ccd9c4b95)
 
 Así mismo, se ha procedido a evaluar con el modelo **Ridge** para minimizar el error, pero con una penalización que busca reducir su magnitud (esto se hace para controlar el sobreajuste o overfitting).
@@ -199,11 +201,10 @@ Los coeficientes con valores absolutos más grandes son más importantes, indepe
 
 Hemos tomado la decisión de utilizar las variables con p value < 5% y el resto de las variables que no aportan mucha variabilidad, eliminar del modelo.
 
-![image](https://github.com/user-attachments/assets/b9b40177-0cfa-4eb3-a6b1-42914f0cc5be)
-
+![image](https://github.com/user-attachments/assets/9a061934-f970-4321-90fd-94ef03d48041)
 
 **Conclusiones**
-Finalmente, entrenamos el modelo con las variables seleccionadas con el algoritmo **XGBoost y obtenemos el mejor R2 - 0,815**
+Finalmente, entrenamos el modelo con las variables seleccionadas con el algoritmo **XGBoost y obtenemos el mejor R2 - 0,822**
 
 Creemos que XGBoost mejora el resultado porque es capaz de capturar relaciones no lineales entre las variables. Los árboles de decisión pueden modelar interacciones complejas entre características sin la necesidad de especificar explícitamente las relaciones. En cambio un modelo lineal asume que la relación entre las características y la variable dependiente es lineal. 
 
