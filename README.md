@@ -26,52 +26,52 @@ Además del modelo predictivo, se pretende:
 **Dataset**
 Se utilizaron dos datasets principales:
 - InfoStations - Contiene información estática sobre cada estación de bicicletas:
-  ID, nombre y ubicación geográfica
-  Latitud y longitud
-  Capacidad máxima de anclajes
-  Código postal, altitud, is_charging_station, etc
+  ID, nombre y ubicación geográfica,
+  Latitud y longitud,
+  Capacidad máxima de anclajes,
+  Código postal, altitud, is_charging_station, etc.
 
 
 **Histórico de disponibilidad**
 Dataset masivo con un histórico de más de 4 años y medio (datos cada 5 minutos):
-- Número de bicicletas disponibles
-- Número de anclajes libres
-- Fecha y hora del reporte (ReportedDT)
-- ID de la estación correspondiente
+- Número de bicicletas disponibles,
+- Número de anclajes libres,
+- Fecha y hora del reporte (ReportedDT),
+- ID de la estación correspondiente.
 
 
 **Preprocesamiento**
 Dado el tamaño y la granularidad del dataset (más de 4 años con registros cada 5 minutos por estación), el preprocesamiento fue un paso clave.
 
-1. Agregación temporal
+1. Agregación temporal.
    Para reducir el tamaño del dataset y hacerlo más manejable, se agregaron los registros a nivel de hora, calculando la mediana horaria de disponibilidad. Esto facilitó los cálculos posteriores y redujo
    la complejidad del modelo.
-2. Unión con InfoStations
+2. Unión con InfoStations.
    Se hizo un join entre el dataset de disponibilidad y el de estaciones para incorporar datos como la capacidad máxima de cada estación. Esta información fue clave para validar si los datos de
    disponibilidad eran coherentes.
-3. Validación y corrección de capacidad
+3. Validación y corrección de capacidad.
    En algunos casos, se detectaron incoherencias: la suma de bicicletas disponibles y espacios libres superaba la capacidad máxima registrada en InfoStations. Para corregirlo:
    Se priorizó el valor de num_bikes_available como más fiable.
    Se calculó num_docks_available_mod = capacidad - num_bikes_available, asegurando así que no se superara el máximo (capacidad).
-4. Estimación de capacidad (cuando faltaba)
+4. Estimación de capacidad (cuando faltaba).
    Algunas estaciones no tenían capacidad registrada. En esos casos, se estimó como: capacidad = bikes_available + docks_available.
    Esta aproximación se consideró aceptable dadas las limitaciones del dataset.
-5. Cálculo del porcentaje de disponibilidad
+5. Cálculo del porcentaje de disponibilidad.
    Se añadió una nueva variable:
    porcentaje_disponibilidad = docks_available / capacidad
    Este porcentaje estandariza la disponibilidad y facilita la comparación entre estaciones con diferentes capacidades.
-6. Formato para modelo y submission
+6. Formato para modelo y submission.
    Para cumplir con el formato de entrega requerido:
    Cada fila representa una combinación de StationID, fecha y hora.
    Se incluyen variables con la disponibilidad en las 4 horas anteriores (t-1, t-2, t-3, t-4).
    Esto genera un dataset supervisado, donde cada fila contiene información histórica para predecir el valor actual.
-7. Control de calidad y valores nulos
+7. Control de calidad y valores nulos.
    Se eliminaron todas las filas sin ReportedDT, ya que no se podía ubicar temporalmente.
    El resto de valores nulos, que eran pocos, se imputaron con la moda de cada columna correspondiente.
-8. Eliminación de duplicados y filas redundantes
+8. Eliminación de duplicados y filas redundantes.
    Para evitar solapamientos, se seleccionó solo la quinta fila de cada grupo temporal por estación.
    Esto asegura que cada fila tiene datos completos de las 4 horas anteriores y evita repetir la misma información en filas sucesivas.
-9. Detectamos que una estación queda lejos del resto de las estaciones y decidimos capar el valor de la variable nueva "nearest_station_distance" a 99no percentil.
+9. Hemos intentado tratar los outliers, pero el modelo no ha mejorado significativamente, aunque Curtosis haya disminuido un poco, después de quitar el outlier. Por ejemplo hemos capado la variable “nearest_station_distance” al percentil 99 porque tenía un valor que destacaba mucho - outlier.
    
 **Análisis Exploratorio**
 Durante el análisis exploratorio se identificaron varios patrones relevantes en el uso del sistema de bicicletas:
@@ -83,31 +83,45 @@ Durante el análisis exploratorio se identificaron varios patrones relevantes en
    En fines de semana el patrón es más relajado, sin picos tan marcados.
 ![image](https://github.com/user-attachments/assets/d32d52c6-e461-4b7a-b71f-efa6ffadf2a3)
 
-3. Festivos
+2. Festivos
    El patrón de uso en días festivos es similar al de los fines de semana: uso más bajo y horarios menos definidos.
    Se confirma que los días no festivos tienen mayor intensidad de uso.
-4. Eventos especiales
+![image](https://github.com/user-attachments/assets/b50408d1-6485-4243-84f8-2b6486e781f0)
+
+3. Eventos especiales
    Se buscó una posible relación entre eventos de la ciudad (festivales, partidos, etc.) y la disponibilidad, pero no se identificó un patrón claro o significativo.
-5. Temporalidad anual
+
+![image](https://github.com/user-attachments/assets/591e9d48-2448-4f14-a315-be8adabdbea6)
+
+4. Temporalidad anual
    Se detecta un uso más bajo en invierno y un pico de uso en verano.
    Excepción: agosto, donde el uso baja bruscamente, probablemente por vacaciones y menor actividad laboral.
+![image](https://github.com/user-attachments/assets/c4055d11-b500-45f7-81ec-c430e416e2bd)
+
 6. Altitud
    Se observó una correlación positiva entre altitud y espacios disponibles.
-   Interpretación: los usuarios toman bicicletas en zonas altas (montaña) y las dejan en zonas bajas (mar). No hacen el trayecto inverso con la misma frecuencia.
+   Posible interpretación: los usuarios toman bicicletas en zonas altas (montaña) y las dejan en zonas bajas (mar). No hacen el trayecto inverso con la misma frecuencia.
+![image](https://github.com/user-attachments/assets/77675ca3-3931-4259-bf63-ab4fc2ef4790)
+![image](https://github.com/user-attachments/assets/d082f3a6-129b-4b2d-87ad-ae44cf8910a2)
+Green = More Docks Available
+Red = Less Docks Available
 7. Proximidad a estaciones de metro
    No se encontró correlación significativa entre la distancia al metro y la disponibilidad de anclajes.
-8. Densidad de estaciones cercanas
-   No se encontró relación clara con la distancia a la estación más cercana.
-   Sin embargo, sí se observó que a mayor número de estaciones dentro de un radio de 300 metros, menor es la disponibilidad, probablemente por competencia por espacio.
+![image](https://github.com/user-attachments/assets/a6d34f45-bb2e-4734-9e44-8753f516534d)
+9. Densidad de estaciones cercanas
+   Se observó que a mayor número de estaciones dentro de un radio de 300 metros, menor es la disponibilidad, probablemente por competencia por espacio.
+![image](https://github.com/user-attachments/assets/81ab80f9-1cd8-4e99-8e52-8849f4436b3b)
+10. Capacidad de la estación
+    Se ha detectado una relación positiva tambien con la capacidad de la estación.
+![image](https://github.com/user-attachments/assets/e63e9098-dc03-4976-aabd-3ba876898049)
+
 
 ***Modelado***
 **Modelo 1: Regresión Lineal (baseline)**
 Se entrenó una regresión lineal simple utilizando solo las variables históricas (t-1 a t-4) para establecer un modelo de referencia.
-
 Split: 80% train / 20% test
 Resultados:
-
-[Aquí insertar captura con MSE, RMSE, R²]
+![image](https://github.com/user-attachments/assets/277e8813-45a6-4b07-ac20-400fcccf3ec0)
 
 **Enriquecimiento del modelo**
 Se añadieron múltiples variables nuevas:
@@ -117,36 +131,84 @@ Densidad de estaciones cercanas (100, 300, 500 m)
 Altitud
 Código postal
 Cercanía al metro
-Disponibilidad en la estación más cercana (últimas 4 horas)
-Se intentó incorporar datos de eventos de ciudad, pero fueron descartados por falta de estructura.
+Events de la ciudad
 
-**Nuevos modelos probados**
-Regresión Lineal con variables extendidas
-Ridge Regression: con regularización L2 para evitar sobreajuste
-XGBoost Regressor: modelo de gradient boosting más potente, capaz de capturar relaciones no lineales
-Se analizó la importancia de las variables, lo que permitió detectar algunas sin impacto real.
-[Esta parte la completará tu compañera con las variables descartadas]
+**Analisis de las Variables**
+Hacer un OLS (Ordinary Least Squares), o regresión lineal ordinaria, al principio de un análisis de datos es importante por varias razones clave. Aunque XGBoost u otros modelos complejos pueden ser muy potentes, OLS proporciona una base sólida para comprender la relación entre las variables y ayuda a identificar posibles problemas con los datos o el modelo.
+Al realizar OLS, obtenemos pruebas estadísticas (como el valor p) para evaluar si las variables son significativas para predecir el resultado. Esto nos permite identificar cuáles variables aportan valor al modelo.
+Si algunas variables no son significativas (por ejemplo, valor p > 0.05), podríamos considerar eliminar esas variables o realizar transformaciones.
 
-**Reducción de dimensionalidad**
-Se aplicó PCA (Análisis de Componentes Principales) para reducir la dimensionalidad del dataset y mejorar la eficiencia del modelo, eliminando redundancias sin perder capacidad explicativa.
+![image](https://github.com/user-attachments/assets/18e40d39-e2dd-43fa-b3a6-2d871d9dcd4d)
 
-**Evaluación del Modelo**
-[Aquí puedes añadir gráficos comparativos de rendimiento, métricas de validación cruzada, curva de errores o interpretación de variables importantes en XGBoost.]
+1. Estadísticas generales del modelo:
+R-squared (0.787): Indica que aproximadamente el 78.7% de la variabilidad en el porcentaje de muelles disponibles puede ser explicado por las variables independientes del modelo.
+Adj. R-squared (0.787): Similar al R-squared, pero ajustado por el número de predictores. Un valor cercano al R-squared indica que la inclusión de más variables no ha causado una sobreajuste del modelo.
+F-statistic (2.050e+05) y Prob (F-statistic) (0.00): La prueba F evalúa si al menos una de las variables independientes tiene una relación significativa con la variable dependiente.
+Un valor p (Prob) de 0.00 indica que el modelo es altamente significativo.
+Log-Likelihood (5.9586e+05): Mide la bondad de ajuste del modelo, con valores más altos indicando un mejor ajuste.
+AIC (-1.192e+06) y BIC (-1.192e+06): Son criterios para la selección de modelos. Valores más bajos indican un buen ajuste.
 
-**Limitaciones y Mejoras Futuras**
 
-Algunas variables añadidas no aportaron valor y fueron eliminadas.
-[Espacio para detallar cuáles y por qué]
-Los eventos especiales no pudieron integrarse por falta de una fuente de datos fiable.
-Futuras mejoras podrían incluir:
-Datos meteorológicos
-Series temporales con redes LSTM
-Mayor personalización por zona geográfica
-Optimización del sistema con simulaciones en tiempo real
+2. Coeficientes de las variables independientes:
+Cada coeficiente representa la relación de esa variable independiente con la variable dependiente (percentage_docks_available). Los coeficientes significativos son aquellos con un valor p (P>|t|) menor a 0.05. A continuación, se describen algunos de los resultados más relevantes:
+- month (0.0005): Cada aumento en el mes incrementa el porcentaje de muelles disponibles en 0.0005 unidades. Este coeficiente es muy pequeño pero significativo (valor p < 0.001).
+- day (-1.101e-06): El día tiene un efecto negativo muy pequeño, pero no es significativo (P>|t| = 0.941), lo que sugiere que no hay una relación clara entre el día y la disponibilidad de muelles.
+- hour (-1.582e-05): La hora del día tiene una relación negativa con la disponibilidad de muelles. Cada aumento en la hora disminuye ligeramente el porcentaje de muelles disponibles.
+- capacity (0.0002): La capacidad tiene un efecto positivo, lo que sugiere que a mayor capacidad, hay más muelles disponibles.
+- altitude (0.0003): El altitud tiene un coeficiente positivo y es altamente significativo, lo que implica que el aumento de la altitud está asociado con un aumento en la disponibilidad de muelles.
+- special_event (7.204e-05): Los eventos especiales no parecen tener un impacto significativo en la disponibilidad de muelles (valor p > 0.05).
+- is_weekend (-0.0014): Los fines de semana están asociados con una pequeña disminución en la disponibilidad de muelles.
+- is_holiday (-0.0017): Similar al fin de semana, los días festivos también tienen una relación negativa con la disponibilidad de muelles.
+- disponibilidad_porcentage_1h_antes (0.9637): La disponibilidad de muelles una hora antes tiene un impacto muy fuerte en la disponibilidad actual, con un coeficiente cercano a 1, lo que indica una relación muy fuerte y positiva.
+- disponibilidad_porcentage_2h_antes (-0.0984): A mayor disponibilidad de muelles dos horas antes, menor es la disponibilidad de muelles en el momento actual, lo que sugiere un patrón cíclico.
+- nearest_station_distance (-1.792e-05): A medida que aumenta la distancia hasta la estación más cercana, disminuye ligeramente la disponibilidad de muelles.
+- stations_within_100m (-0.0011): La proximidad a otras estaciones dentro de los 100 metros tiene un efecto negativo en la disponibilidad de muelles, pero este efecto no es significativo.
+- stations_within_300m (-0.0012): A más estaciones cercanas a 300 metros también muestran una relación negativa significativa con la disponibilidad de muelles.
+Como también sugiere la grafica  del análisis exploratorio, la variable 300 metros parece tener una relación lineal negativa con la disponibilidad de muelles.
+![image](https://github.com/user-attachments/assets/ec0b0102-f6f8-44de-9c25-18c8cd5da0da)
+- stations_within_500m (0.0006): Sin embargo, las estaciones dentro de los 500 metros están positivamente relacionadas con la disponibilidad de muelles. Es posible debido al efecto de autocorrelación entre estas variables, para contrarrestar el efecto de la variable anterior. Por eso se toma la decisión de utilizar solo la variable stations_within_300m en el modelo final.
+
+Se procede al análisis de factores de inflación de la varianza (FIV) para evaluar la multicolinealidad entre las variables independientes en el modelo. Observamos dos o más variables independientes que están altamente correlacionadas, lo que puede hacer que el modelo sea menos confiable.
+![image](https://github.com/user-attachments/assets/92c42d09-0162-4da4-9741-1b584f2a339c)
+Tambien  observamos en las matrices de correlación fuerte correlación entre estas variables:
+![image](https://github.com/user-attachments/assets/8ec83c84-631a-4455-b674-5de52e4dbcbd)
+
+
+
+3. Pruebas adicionales:
+- Omnibus (137032.274): Es una prueba de normalidad de los residuos. Un valor p de 0.00 indica que los residuos no siguen una distribución normal.
+- Durbin-Watson (1.989): Este estadístico evalúa la autocorrelación de los residuos. Un valor cercano a 2 indica que no hay autocorrelación significativa.
+- Jarque-Bera (JB) y Prob (JB) (0.00): Indican que los residuos no siguen una distribución normal (esto se confirma con el valor p muy bajo).
+- Skew (-0.194) y Kurtosis (10.736): La asimetría es baja, pero la curtosis indica que los residuos tienen colas más gruesas que una distribución normal. Esto indica que los residuos pueden tener más valores extremos (outliers) que una distribución normal, lo que podría implicar que el modelo no está capturando algunas variaciones importantes de los datos.
+
+En resumen, el modelo OLS muestra que varias variables, como la capacidad, la altitud, y la disponibilidad  1 hora pasada de muelles tienen una relación significativa con el porcentaje de muelles disponibles, mientras que algunas otras variables como los eventos especiales y el día de la semana no tienen un impacto significativo.
+
+Otra alternativa que hemos utilizado para mitigar las correlaciones entre variables independientes es  utilizar **PCA (Análisis de Componentes Principales)** para reducir la multicolinealidad en nuestro modelo y luego usar las componentes principales como entradas en un modelo de XGBoost para mejorar la eficiencia y la estabilidad del modelo, especialmente cuando las variables de entrada están altamente correlacionadas, como es nuestro caso.
+
+**Explained_variance_ratio_** nos da el porcentaje de varianza explicada por cada componente principal. Si sumas los valores de explained_variance_ratio_, obtenemos la cantidad total de varianza explicada por todas las componentes principales.
+Ahora obtenemos las componentes principales (que no están correlacionadas) los usamos en el modelo de XGBoost.
+**Nos ha salido el R2 muy parecido que en el modelo de regression 0,78**
+![image](https://github.com/user-attachments/assets/d6f9c9b0-5828-412d-babe-8d7ccd9c4b95)
+
+Así mismo, se ha procedido a evaluar con el modelo **Ridge** para minimizar el error, pero con una penalización que busca reducir su magnitud (esto se hace para controlar el sobreajuste o overfitting).
+El código ha ordenado las características según el valor absoluto de los coeficientes. La idea aquí es identificar cuáles características tienen el mayor impacto en el modelo. 
+Los coeficientes con valores absolutos más grandes son más importantes, independientemente de si son positivos o negativos.
+**Obtenemos un 0,79 con Regression de Ridge**
+
+![image](https://github.com/user-attachments/assets/2b39ac09-b21c-4481-96c2-9430c6f64086)
+
+Hemos tomado la decisión de utilizar las variables con p value < 5% y el resto de las variables que no aportan mucha variabilidad, eliminar del modelo.
+
+![image](https://github.com/user-attachments/assets/b9b40177-0cfa-4eb3-a6b1-42914f0cc5be)
 
 
 **Conclusiones**
-[Espacio para añadir conclusiones personales, utilidad del modelo y aprendizaje obtenido.]
+Finalmente, entrenamos el modelo con las variables seleccionadas con el algoritmo **XGBoost y obtenemos el mejor R2 - 0,815**
+
+Creemos que XGBoost mejora el resultado porque es capaz de capturar relaciones no lineales entre las variables. Los árboles de decisión pueden modelar interacciones complejas entre características sin la necesidad de especificar explícitamente las relaciones. En cambio un modelo lineal asume que la relación entre las características y la variable dependiente es lineal. 
 
 **Autores**
-
+Natalia Drevila,
+Diana Parra,
+Michele Pirolo Inazio,
+Vitaliy Machok
