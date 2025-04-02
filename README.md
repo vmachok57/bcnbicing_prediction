@@ -209,17 +209,13 @@ Hemos tomado la decisión de utilizar las variables con p value < 5% y el resto 
 
 Finalmente, entrenamos el modelo con las variables seleccionadas con el algoritmo **XGBoost y obtenemos el mejor R2 - 0,826**
 
-Alternativamente hemos probado LSTM con solo 4 variables - la secuencia de la disponibilidad de las últimas 4 horas. A pesar de ser simple con la cantidad de caracteristicas, nos ha sorprendido con un resultado decente:
+Alternativamente hemos probado LSTM con las variables continuas. Nos ha demostrado un resultado interesante tambien:
 ![image](https://github.com/user-attachments/assets/73f057c8-80a2-4808-871d-055a87f717b0)
-
-Y despues aplicamos LSTM con el dataset mas amplio incluyendo todas las variables que consideramos para XGBoost. El resultado ha obtenido un lígera mejora en comparación con el modelo simple, lo que nos sugiere que las variables mas importantes para la predicción (y confirmado con todos los modelos) son la información de la disponibilidad de las últimas 2 horas.
-
-![image](https://github.com/user-attachments/assets/6f01240d-3713-432e-b214-6ca8da10c0d0)
-
 
 
 **Conclusiones**
 Hemos probado distintos modelos y evaluamos distintas variables para predecir la disponibilidad en la estacion de bicing: desde una simple Regresion Lineal hasta una RNN LTSM. Sin embargo, nos quedamos con XGBoost, eligiendo el balance entre interpretabilidad y el resultado de las estimaciones.
+XGBoost tiende a ser más eficiente, robusto y fácil de ajustar que las redes neuronales para tareas de regresión, especialmente cuando los datos no son enormes y no requieren modelos extremadamente complejos.
 
 **Autores**
 Natalia Drevila,
