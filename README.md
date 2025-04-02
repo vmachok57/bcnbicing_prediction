@@ -44,14 +44,12 @@ Dataset masivo con un histórico de más de 4 años y medio (datos cada 5 minuto
 Dado el tamaño y la granularidad del dataset (más de 4 años con registros cada 5 minutos por estación), el preprocesamiento fue un paso clave.
 
 1. Agregación temporal.
-   Para reducir el tamaño del dataset y hacerlo más manejable, se agregaron los registros a nivel de hora, calculando la mediana horaria de disponibilidad. Esto facilitó los cálculos posteriores y redujo
-   la complejidad del modelo.
+   Para reducir el tamaño del dataset y hacerlo más manejable, se agregaron los registros a nivel de hora, calculando la mediana horaria de disponibilidad. Esto facilitó los cálculos posteriores y redujo la complejidad del modelo.
 2. Unión con InfoStations.
-   Se hizo un join entre el dataset de disponibilidad y el de estaciones para incorporar datos como la capacidad máxima de cada estación. Esta información fue clave para validar si los datos de
-   disponibilidad eran coherentes.
+   Se hizo un join entre el dataset de disponibilidad y el de estaciones para incorporar datos como la capacidad máxima de cada estación. Esta información fue clave para validar si los datos de disponibilidad eran coherentes.
 3. Validación y corrección de capacidad.
    En algunos casos, se detectaron incoherencias: la suma de bicicletas disponibles y espacios libres superaba la capacidad máxima registrada en InfoStations. Para corregirlo:
-   Se priorizó el valor de num_bikes_available como más fiable.
+   Se priorizó los valores de capacidad y num_bikes_available como más fiables.
    Se calculó num_docks_available_mod = capacidad - num_bikes_available, asegurando así que no se superara el máximo (capacidad).
 4. Estimación de capacidad (cuando faltaba).
    Algunas estaciones no tenían capacidad registrada. En esos casos, se estimó como: capacidad = bikes_available + docks_available.
@@ -66,12 +64,12 @@ Dado el tamaño y la granularidad del dataset (más de 4 años con registros cad
    Se incluyen variables con la disponibilidad en las 4 horas anteriores (t-1, t-2, t-3, t-4).
    Esto genera un dataset supervisado, donde cada fila contiene información histórica para predecir el valor actual.
 7. Control de calidad y valores nulos.
-   Se eliminaron todas las filas sin ReportedDT, ya que no se podía ubicar temporalmente.
+   Se eliminaron todas las filas sin ReportedDT, ya que no se podía ubicar a nivel temporal los registros.
    El resto de valores nulos, que eran pocos, se imputaron con la moda de cada columna correspondiente.
 8. Eliminación de duplicados y filas redundantes.
    Para evitar solapamientos, se seleccionó solo la quinta fila de cada grupo temporal por estación.
    Esto asegura que cada fila tiene datos completos de las 4 horas anteriores y evita repetir la misma información en filas sucesivas.
-9. Hemos intentado tratar los outliers, pero el modelo no ha mejorado significativamente, aunque Curtosis haya disminuido un poco, después de quitar el outlier. Por ejemplo hemos capado la variable “nearest_station_distance” al percentil 99 porque tenía un valor que destacaba mucho - outlier.
+9. Hemos intentado tratar los outliers, pero el modelo no ha mejorado significativamente, aunque Curtosis haya disminuido un poco, después de quitar el outlier. Por ejemplo hemos capado algunas variables al percentil 99.
    
 **Análisis Exploratorio**
 Durante el análisis exploratorio se identificaron varios patrones relevantes en el uso del sistema de bicicletas:
@@ -121,8 +119,7 @@ Red = Less Docks Available
 Se entrenó una regresión lineal simple utilizando solo las variables históricas (t-1 a t-4) para establecer un modelo de referencia.
 Split: 80% train / 20% test
 Resultados:
-![image](https://github.com/user-attachments/assets/db3f7a51-3ca1-465d-ba4f-eb6341ee43fb)
-
+![image](https://github.com/user-attachments/assets/34e18dee-07c6-40a7-aad8-5c35756478bc)
 
 **Enriquecimiento del modelo**
 Se añadieron múltiples variables nuevas:
@@ -207,15 +204,15 @@ Hemos tomado la decisión de utilizar las variables con p value < 5% y el resto 
 
 ![image](https://github.com/user-attachments/assets/9a061934-f970-4321-90fd-94ef03d48041)
 
-Finalmente, entrenamos el modelo con las variables seleccionadas con el algoritmo **XGBoost y obtenemos el mejor R2 - 0,826**
+Finalmente, entrenamos el modelo con las variables seleccionadas con el algoritmo **XGBoost y obtenemos el mejor R2 - 0,834**
 
 Alternativamente hemos probado LSTM con las variables continuas. Nos ha demostrado un resultado interesante tambien:
-![image](https://github.com/user-attachments/assets/73f057c8-80a2-4808-871d-055a87f717b0)
+![image](https://github.com/user-attachments/assets/846c1c51-e72a-47bc-8ea2-2ac9136a065f)
+
 
 
 **Conclusiones**
-Hemos probado distintos modelos y evaluamos distintas variables para predecir la disponibilidad en la estacion de bicing: desde una simple Regresion Lineal hasta una RNN LTSM. Sin embargo, nos quedamos con XGBoost, eligiendo el balance entre interpretabilidad y el resultado de las estimaciones.
-XGBoost tiende a ser más eficiente, robusto y fácil de ajustar que las redes neuronales para tareas de regresión, especialmente cuando los datos no son enormes y no requieren modelos extremadamente complejos.
+Hemos probado distintos modelos y evaluamos distintas variables para predecir la disponibilidad en la estacion de bicing: desde una simple Regresion Lineal hasta una RNN LTSM. Sin embargo, nos quedamos con el modelo de XGBoost, eligiendo el balance entre interpretabilidad y el mejor resultado de las estimaciones (tanto según Kaggle como según nuestros analisis).
 
 **Autores**
 Natalia Drevila,
