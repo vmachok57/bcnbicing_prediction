@@ -133,6 +133,8 @@ Altitud
 Código postal
 Cercanía al metro
 Events de la ciudad
+Cross Street (calle intersectante)
+Cross Barrio (Barrio de la estación)
 
 **Analisis de las Variables**
 Hacer un OLS (Ordinary Least Squares), o regresión lineal ordinaria, al principio de un análisis de datos es importante por varias razones clave. Aunque XGBoost u otros modelos complejos pueden ser muy potentes, OLS proporciona una base sólida para comprender la relación entre las variables y ayuda a identificar posibles problemas con los datos o el modelo.
@@ -162,6 +164,8 @@ Cada coeficiente representa la relación de esa variable independiente con la va
 - special_event (-0.0011): Los eventos especiales no parecen tener un impacto significativo en la disponibilidad de muelles.
 - is_weekend (-0.0008): Los fines de semana están asociados con una pequeña disminución en la disponibilidad de muelles.
 - is_holiday (-0.0031): Similar al fin de semana, los días festivos también tienen una relación negativa con la disponibilidad de muelles.
+- cross_street : Dependiendo de la calle donde se encuentre y con qué calle se cruce se observa una relación con la variable target.
+- postal_code : Dependiendo del barrio la disponibilidad de los sitios para bicicletas puede depender. Se observa que es bastante interesante, ya que su p-value < 0.05.
 - disponibilidad_porcentage_1h_antes (0.9658): La disponibilidad de muelles una hora antes tiene un impacto muy fuerte en la disponibilidad actual, con un coeficiente cercano a 1, lo que indica una relación muy fuerte y positiva.
 - disponibilidad_porcentage_2h_antes (-0.0988): A mayor disponibilidad de muelles dos horas antes, menor es la disponibilidad de muelles en el momento actual, lo que sugiere un patrón cíclico.
 - nearest_station_distance (-1.878e-05): A medida que aumenta la distancia hasta la estación más cercana, disminuye ligeramente la disponibilidad de muelles.
@@ -203,13 +207,17 @@ Hemos tomado la decisión de utilizar las variables con p value < 5% y el resto 
 
 ![image](https://github.com/user-attachments/assets/9a061934-f970-4321-90fd-94ef03d48041)
 
-**Conclusiones**
-Finalmente, entrenamos el modelo con las variables seleccionadas con el algoritmo **XGBoost y obtenemos el mejor R2 - 0,822**
+Finalmente, entrenamos el modelo con las variables seleccionadas con el algoritmo **XGBoost y obtenemos el mejor R2 - 0,826**
 
-Creemos que XGBoost mejora el resultado porque es capaz de capturar relaciones no lineales entre las variables. Los árboles de decisión pueden modelar interacciones complejas entre características sin la necesidad de especificar explícitamente las relaciones. En cambio un modelo lineal asume que la relación entre las características y la variable dependiente es lineal. 
+Alternativamente hemos probado LSTM con solo 4 variables - la secuencia de la disponibilidad de las últimas 4 horas. A pesar de ser simple con la cantidad de caracteristicas, nos ha sorprendido con un resultado decente:
+![image](https://github.com/user-attachments/assets/73f057c8-80a2-4808-871d-055a87f717b0)
+
+Y despues aplicamos LSTM con el dataset mas amplio incluyendo todas las variables que consideramos para XGBoost. El resultado ha obtenido un lígera mejora en comparación con el modelo simple, lo que nos sugiere que las variables mas importantes para la predicción (y confirmado con todos los modelos) son la información de la disponibilidad de las últimas 4 horas.
+
+
+**Conclusiones**
+Hemos probado distintos modelos y evaluamos distintas variables para predecir la disponibilidad en la estacion de bicing: desde una simple Regresion Lineal hasta una RNN LTSM. Sin embargo, nos quedamos con XGBoost, eligiendo el balance entre interpretabilidad y el resultado de las estimaciones.
 
 **Autores**
 Natalia Drevila,
-Diana Parra,
-Michele Pirolo Inazio,
 Vitaliy Machok
